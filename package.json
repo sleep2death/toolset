@@ -33,10 +33,10 @@
   "author": "aspirin2d@outlook.com",
   "license": "ISC",
   "devDependencies": {
-    "gulp": "^3.9.1",
     "xo": "^0.16.0"
   },
   "dependencies": {
+    "gulp": "^3.9.1",
     "gulp-shell": "^0.5.2",
     "gulp-util": "^3.0.7",
     "path": "^0.12.7",
