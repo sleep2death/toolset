@@ -1,0 +1,46 @@
+{
+  "name": "toolset",
+  "version": "0.0.5",
+  "description": "a toolset for game design and dev import",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "toolset",
+    "game",
+    "design",
+    "excel"
+  ],
+  "xo": {
+    "esnext": true,
+    "env": [
+      "node",
+      "browser"
+    ],
+    "space": true,
+    "semicolon": false,
+    "rules": {
+      "curly": 0,
+      "keyword-spacing": 0,
+      "guard-for-in": 0
+    },
+    "globals": [
+      "Phaser",
+      "$"
+    ]
+  },
+  "author": "aspirin2d@outlook.com",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "xo": "^0.16.0"
+  },
+  "dependencies": {
+    "gulp-shell": "^0.5.2",
+    "gulp-util": "^3.0.7",
+    "path": "^0.12.7",
+    "walk": "^2.3.9",
+    "xlsx": "^0.8.0"
+  }
+}
