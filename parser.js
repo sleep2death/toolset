@@ -54,6 +54,9 @@ function findIndexRow(ws, range, name) {
 function row(ws, range, index, r) {
   const obj = {}
 
+  const cell = xlsx.utils.encode_cell({c: range.s.c, r})
+  if(ws[cell] && ws[cell].v === '#') return obj
+
   for(const key in index.props) {
     const cell = xlsx.utils.encode_cell({c: key, r})
     let value = ws[cell] ? ws[cell].v : null

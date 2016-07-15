@@ -29,7 +29,8 @@ gulp.task('parse', ['svn-update'], cb => {
 })
 
 gulp.task('svn-update', shell.task([
-  `svn update ${CONFIG_PATH}`
+  `svn update ${CONFIG_PATH}`,
+  `svn update ${OUTPUT_PATH}`
 ], {verbose: true}))
 
 gulp.task('svn-commit', ['parse'], shell.task([
