@@ -36,11 +36,17 @@
     "xo": "^0.16.0"
   },
   "dependencies": {
+    "async": "^2.0.0",
+    "glob": "^7.0.5",
     "gulp": "^3.9.1",
     "gulp-shell": "^0.5.2",
     "gulp-util": "^3.0.7",
+    "gulp.spritesmith": "git+https://github.com/twolfson/gulp.spritesmith.git",
     "path": "^0.12.7",
+    "platform-command": "0.0.1",
+    "progress": "^1.1.8",
     "require-dir": "^0.3.0",
+    "spritesheet-js": "^1.1.9",
     "walk": "^2.3.9",
     "xlsx": "^0.8.0"
   }

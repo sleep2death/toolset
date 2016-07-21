@@ -12,7 +12,7 @@ const sheet = require('../src/xlsx-parser')
 const CONFIG_PATH = './data/config'
 const OUTPUT_PATH = './data/config_output'
 
-gulp.task('parsing', ['svn-update'], cb => {
+gulp.task('parsing-config', ['svn-update-config'], cb => {
   // walk through the config folder
   const walker = walk.walk(`${CONFIG_PATH}`)
 
@@ -28,12 +28,12 @@ gulp.task('parsing', ['svn-update'], cb => {
   })
 })
 
-gulp.task('svn-update', shell.task([
+gulp.task('svn-update-config', shell.task([
   `svn update ${CONFIG_PATH}`,
   `svn update ${OUTPUT_PATH}`
 ], {verbose: true}))
 
-gulp.task('xlsx-parsing', ['parsing'], shell.task([
+gulp.task('config-parsing', ['parsing-config'], shell.task([
   `svn commit ${OUTPUT_PATH}/*.txt -m '${new Date()}'`
 ], {verbose: true}))
 

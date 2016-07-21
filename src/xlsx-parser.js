@@ -119,7 +119,7 @@ function getData(ws, range, index) {
   return res
 }
 
-function sheet(ws) {
+function xlsxParser(ws) {
   if(ws['!ref']) {
     const range = xlsx.utils.decode_range(ws['!ref'])
 
@@ -140,4 +140,4 @@ function sheet(ws) {
   return null
 }
 
-module.exports = sheet
+module.exports = xlsxParser
