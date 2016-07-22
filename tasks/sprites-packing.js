@@ -29,7 +29,7 @@ gulp.task('sprites-packing', cb => {
   fs.readdir(PATH, (err, files) => {
     if(err) throw err
     async.eachSeries(files, (file, next) => {
-      if(fs.statSync(`${PATH}/${file}`).isDirectory() && file !== '.svn' && file === 'shala') {
+      if(fs.statSync(`${PATH}/${file}`).isDirectory() && file !== '.svn' && file !== 'NPC' && file === 'wulu') {
         pack(file, next)
       }else{
         next()
@@ -117,8 +117,6 @@ function genNewVO(file, config, cb) {
   newVO.avatar = {} // create a avartar obj to hold all avartar's sprites
   newVO.avatar.decoration = {} // create a decoration obj to hold all decoration's sprites
 
-  const reg = /([a-z]+)(\d*)/
-
   for(const key in config) {
     newVO.weapon[WEAPON_ID[key]] = {}
     for(const action in config[key]) {
@@ -142,34 +140,43 @@ function genNewVO(file, config, cb) {
     // body && decorations
     for(const action in config[key]) {
       const aVO = config[key][action]
+
       if(!body[aVO.body]) {
-        body[aVO.body] = ''
+        body[aVO.body] = {}
+        body[aVO.body].str = ''
+        body[aVO.body].action = action
       }
 
-      body[aVO.body] += `_${weaponNum}`
+      body[aVO.body].str += `_${weaponNum}`
 
       if(aVO.deco) {
         if(!decorations[aVO.deco]) {
-          decorations[aVO.deco] = ''
+          decorations[aVO.deco] = {}
+          decorations[aVO.deco].str = ''
+          decorations[aVO.deco].action = action
         }
 
-        decorations[aVO.deco] += `_${weaponNum}`
+        decorations[aVO.deco].str += `_${weaponNum}`
       }
     }
   }
 
   for(const key in body) {
-    const names = key.split('_')
-    const k = reg.exec(names[1])[1]
-    const v = body[key] === '_1_2_3_4_5_6' ? '' : body[key]
-    newVO.body[k + v] = key
+    // const names = key.split('_')
+    // let k = reg.exec(names[1])[1]
+    // k = (k === 'magic') ? 'skill_magic' : k
+    const v = body[key].str === '_1_2_3_4_5_6' ? '' : body[key].str
+    newVO.body[body[key].action + v] = key
   }
 
   for(const key in decorations) {
-    const names = key.split('_')
-    const k = reg.exec(names[1])[1]
-    const v = decorations[key] === '_1_2_3_4_5_6' ? '' : decorations[key]
-    newVO.avatar.decoration[k + v] = key
+    // const names = key.split('_')
+    // let k = reg.exec(names[1])[1]
+    // k = (k === 'magic') ? 'skill_magic' : k
+    // const v = decorations[key] === '_1_2_3_4_5_6' ? '' : decorations[key]
+    // newVO.avatar.decoration[k + v] = key
+    const v = decorations[key].str === '_1_2_3_4_5_6' ? '' : decorations[key].str
+    newVO.avatar.decoration[decorations[key].action + v] = key
   }
 
   cb(null, newVO)

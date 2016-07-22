@@ -64,7 +64,6 @@ function parse(path) {
         if (err) {
           return console.log(err)
         }
-
         // console.log(`${name} was saved`)
       })
     }

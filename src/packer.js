@@ -52,7 +52,7 @@ function tpsheet(options, str, cb) {
 
 // convert png32 to tga24
 function convert(options, cb) {
-  exec(`convert ${options.path}/${options.name}.png -background black -flatten -depth 32 ${options.path}/${options.name}.png`, err => {
+  exec(`convert ${options.path}/${options.name}.png ${options.path}/${options.name}.png`, err => {
     if(err) throw err
     cb()
   })

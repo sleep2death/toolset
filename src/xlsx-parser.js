@@ -61,6 +61,10 @@ function row(ws, range, index, r) {
     const cell = xlsx.utils.encode_cell({c: key, r})
     let value = ws[cell] ? ws[cell].v : null
 
+    if(value !== null && index.num[key] === false) {
+      value = String(value)
+    }
+
     if(index.num[key] === true && value === null) {
       value = 0
     }else if(value === null && index.num[key] === false) {
@@ -71,6 +75,8 @@ function row(ws, range, index, r) {
       value = true
     }else if(index.num[key] && value === 'false') {
       value = false
+    }else if(index.num[key]) {
+      value = Number(value)
     }
 
     if(value === '#') return obj
@@ -80,6 +86,7 @@ function row(ws, range, index, r) {
     if(propName === undefined) continue
     obj[propName] = value
 
+    // if(index.props[key] === 'elements') console.log('found', obj, typeof value)
     // if group id or id existed, create a field for it
     if(index.key[key] === true) {
       obj.PID = value
