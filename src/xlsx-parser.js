@@ -69,6 +69,8 @@ function row(ws, range, index, r) {
       value = 0
     }else if(value === null && index.num[key] === false) {
       value = ''
+    }else if(value !== null && index.num[key] === false) {
+      value = String(value)
     }
 
     if(index.num[key] && value === 'true') {
@@ -86,7 +88,7 @@ function row(ws, range, index, r) {
     if(propName === undefined) continue
     obj[propName] = value
 
-    // if(index.props[key] === 'elements') console.log('found', obj, typeof value)
+    // if(index.props[key] === 'itemName') console.log('found', obj, typeof value)
     // if group id or id existed, create a field for it
     if(index.key[key] === true) {
       obj.PID = value
@@ -109,6 +111,7 @@ function getData(ws, range, index) {
     if(firstCellValue === '$title' || firstCellValue === '$isKey' || firstCellValue === '$isNum') continue
 
     const vo = row(ws, range, index, R)
+    // if(name === 'ItemShopCfg') console.log(vo)
     if(!isEmpty(vo)) {
       // group id and id | group id only | id only
       if(vo.GID >= 0 && vo.PID >= 0) {
@@ -126,7 +129,7 @@ function getData(ws, range, index) {
   return res
 }
 
-function xlsxParser(ws) {
+function xlsxParser(ws, name) {
   if(ws['!ref']) {
     const range = xlsx.utils.decode_range(ws['!ref'])
 
@@ -138,7 +141,7 @@ function xlsxParser(ws) {
     // if all index fields existed, fill the result
     if(props && key && num) {
       const index = {props, key, num}
-      return getData(ws, range, index)
+      return getData(ws, range, index, name)
     }
 
     // gutil.log(gutil.colors.red('Not a valid sheet'), name)
