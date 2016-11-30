@@ -36,6 +36,9 @@ function readFile(path) {
     // dealing with worksheet
     const ws = wb.Sheets[name]
     const sheet = readSheet(ws)
+    if(sheet) {
+      console.log(name)
+    }
   })
 }
 
@@ -50,7 +53,6 @@ function readSheet(ws) {
 
     // if all index fields existed, fill the result
     if(props && key && num) {
-      console.log(props)
       const index = {props, key, num}
       return readData(ws, range, index)
     }
@@ -72,6 +74,17 @@ function readData(ws, range, index) {
 
     // read the row
     const vo = readRow(ws, range, index, R)
+    if(!vo) continue
+
+    if(vo.GID >= 0 && vo.PID >= 0) {
+      throw new Error('GID PID can\'t existed both')
+    }else if(vo.GID >= 0 && vo.PID === undefined) {
+      if(res[vo.GID] === undefined) res[vo.GID] = []
+      res[vo.GID].push(vo)
+    }else if(vo.GID === undefined && vo.PID >= 0) {
+      if(res[vo.PID]) throw new Error('PID duplicated')
+      res[vo.PID] = vo
+    }
   }
 
   return res
@@ -79,17 +92,43 @@ function readData(ws, range, index) {
 
 function readRow(ws, range, index, r) {
   const cell = xlsx.utils.encode_cell({c: range.s.c, r})
+  const data = {}
   // if commented ,then return null
   if(ws[cell] && ws[cell].v === '#') return null
   for(const key in index.props) {
     const cell = xlsx.utils.encode_cell({c: key, r})
-    let value = ws[cell] ? ws[cell].v : null
-
+    let value = ws[cell]
     // handle empty value
-    if(value === null) {
+    if(value === undefined) {
+      // if id is empty, ignore it
+      if(index.key[key] === true || index.key[key] === 'GROUP') return null
+
+      // the default value of number field is 0, string field is ''
+      value = index.num[key] === true ? 0 : ''
+    }else{
+      // return when hit comment tag
+      if(value === '#') {
+        if(isEmpty(data)) return null
+        return data
+      }
+
+      // if the value is number, stringify it
+      value = index.num[key] ? Number(value) : String(value)
+
+      // if the value is boolean string, and type is number
+      if(index.num[key] && value === 'true') throw new Error('string found in number field')
     }
-    console.log(index.key[key])
+
+    const propName = index.props[key]
+
+    if(propName === undefined) throw new Error('proper name not found')
+    data[propName] = value
+
+    if(index.key[key] === true) data.PID = value
+    if(index.key[key] === 'GROUP') data.GID = value
   }
+
+  return data
 }
 
 // get the index object by the certain name: $title, $isKey, $isNum
@@ -114,4 +153,27 @@ function findIndexRow(ws, range, name) {
   }
 
   return null
+}
+
+const hasOwnProperty = Object.prototype.hasOwnProperty
+function isEmpty(obj) {
+  if (obj === null) {
+    return true
+  }
+
+  if (obj.length > 0) {
+    return false
+  }
+
+  if (obj.length === 0) {
+    return true
+  }
+
+  for (const key in obj) {
+    if (hasOwnProperty.call(obj, key)) {
+      return false
+    }
+  }
+
+  return true
 }
