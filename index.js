@@ -1,22 +1,28 @@
+'use strict'
+
 const fs = require('fs')
+const process = require('process')
+const readline = require('readline')
 const path = require('path')
 // var Progressbar = require('progress')
 const promise = require('bluebird')
 
 const xlsx = require('xlsx')
 
-const ROOT = './data/config'
+const SRC = './data/config'
+const BIN = './data/config_output'
 
 promise.promisifyAll(fs)
 
 // read each file in the config folder
-fs.readdirAsync(ROOT, 'utf8')
+fs.readdirAsync(SRC, 'utf8')
   .each(
     name => {
       const ext = path.extname(name)
       // read the excel file
       if (ext === '.xlsx' || ext === 'xls') {
-        return readFile(`${ROOT}/${name}`)
+        this.currentFile = `${SRC}/${name}`
+        return readFile(`${SRC}/${name}`)
       }
     }
   )
@@ -35,9 +41,10 @@ function readFile(path) {
   wb.SheetNames.forEach(name => {
     // dealing with worksheet
     const ws = wb.Sheets[name]
+    ws.path = `${path}/${name}`
     const sheet = readSheet(ws)
+
     if(sheet) {
-      console.log(name)
     }
   })
 }
@@ -53,10 +60,13 @@ function readSheet(ws) {
 
     // if all index fields existed, fill the result
     if(props && key && num) {
+      readline.clearLine(process.stderr, 1)
+      readline.cursorTo(process.stderr, 0)
+      process.stderr.write(` Parsing ${ws.path}...\x1B[0G`)
+      // process.stdout.write(` Parsing ${ws.path}...\x1B[0G`)
       const index = {props, key, num}
       return readData(ws, range, index)
     }
-    // gutil.log(gutil.colors.red('Not a valid sheet'), name)
   }
 
   return null
@@ -77,12 +87,16 @@ function readData(ws, range, index) {
     if(!vo) continue
 
     if(vo.GID >= 0 && vo.PID >= 0) {
-      throw new Error('GID PID can\'t existed both')
+      if(res[vo.GID] === undefined) res[vo.GID] = {}
+      res[vo.GID][vo.PID] = vo
     }else if(vo.GID >= 0 && vo.PID === undefined) {
       if(res[vo.GID] === undefined) res[vo.GID] = []
       res[vo.GID].push(vo)
     }else if(vo.GID === undefined && vo.PID >= 0) {
-      if(res[vo.PID]) throw new Error('PID duplicated')
+      if(res[vo.PID]) {
+        process.stderr.write(`\n`)
+        throw new Error(`PID duplicated ${vo.PID}`)
+      }
       res[vo.PID] = vo
     }
   }
@@ -97,11 +111,14 @@ function readRow(ws, range, index, r) {
   if(ws[cell] && ws[cell].v === '#') return null
   for(const key in index.props) {
     const cell = xlsx.utils.encode_cell({c: key, r})
-    let value = ws[cell]
+    let value = ws[cell] ? ws[cell].v : undefined
     // handle empty value
-    if(value === undefined) {
+    if(value === undefined || String(value).trim().length === 0) {
       // if id is empty, ignore it
-      if(index.key[key] === true || index.key[key] === 'GROUP') return null
+      if(index.key[key] === true || index.key[key] === 'GROUP') {
+        console.log('empty id field')
+        return null
+      }
 
       // the default value of number field is 0, string field is ''
       value = index.num[key] === true ? 0 : ''
@@ -114,7 +131,6 @@ function readRow(ws, range, index, r) {
 
       // if the value is number, stringify it
       value = index.num[key] ? Number(value) : String(value)
-
       // if the value is boolean string, and type is number
       if(index.num[key] && value === 'true') throw new Error('string found in number field')
     }
