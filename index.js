@@ -6,6 +6,7 @@ const readline = require('readline')
 const path = require('path')
 // var Progressbar = require('progress')
 const promise = require('bluebird')
+const chalk = require('chalk')
 
 const xlsx = require('xlsx')
 
@@ -36,7 +37,7 @@ fs.readdirAsync(SRC, 'utf8')
 function readFile(path) {
   // parsing xlsx
   const wb = xlsx.readFile(path)
-  if(!wb) throw new Error(`Parsing Error: ${path}`)
+  if(!wb) throwError(`Parsing Error: ${path}`)
 
   wb.SheetNames.forEach(name => {
     // dealing with worksheet
@@ -45,6 +46,9 @@ function readFile(path) {
     const sheet = readSheet(ws)
 
     if(sheet) {
+      fs.writeFile(`${BIN}/${name}.json.txt`, JSON.stringify(sheet, null, 4), err => {
+        if(err) throwError(err)
+      })
     }
   })
 }
@@ -60,9 +64,9 @@ function readSheet(ws) {
 
     // if all index fields existed, fill the result
     if(props && key && num) {
-      readline.clearLine(process.stderr, 1)
+      readline.clearLine(process.stderr)
       readline.cursorTo(process.stderr, 0)
-      process.stderr.write(` Parsing ${ws.path}...\x1B[0G`)
+      process.stderr.write(`Parsing ${chalk.styles.green.open}${ws.path}${chalk.styles.green.close}`)
       // process.stdout.write(` Parsing ${ws.path}...\x1B[0G`)
       const index = {props, key, num}
       return readData(ws, range, index)
@@ -94,8 +98,7 @@ function readData(ws, range, index) {
       res[vo.GID].push(vo)
     }else if(vo.GID === undefined && vo.PID >= 0) {
       if(res[vo.PID]) {
-        process.stderr.write(`\n`)
-        throw new Error(`PID duplicated ${vo.PID}`)
+        throwError(`PID duplicated ${vo.PID}`)
       }
       res[vo.PID] = vo
     }
@@ -116,7 +119,7 @@ function readRow(ws, range, index, r) {
     if(value === undefined || String(value).trim().length === 0) {
       // if id is empty, ignore it
       if(index.key[key] === true || index.key[key] === 'GROUP') {
-        console.log('empty id field')
+        // console.log('empty id field')
         return null
       }
 
@@ -129,15 +132,20 @@ function readRow(ws, range, index, r) {
         return data
       }
 
-      // if the value is number, stringify it
-      value = index.num[key] ? Number(value) : String(value)
-      // if the value is boolean string, and type is number
-      if(index.num[key] && value === 'true') throw new Error('string found in number field')
+      if(index.num[key]) {
+        // if the value is boolean string, and type is number
+        if(String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'false')
+          value = value === 'true'
+        else
+          value = Number(value)
+      }else{
+        value = String(value)
+      }
     }
 
     const propName = index.props[key]
 
-    if(propName === undefined) throw new Error('proper name not found')
+    if(propName === undefined) throwError('proper name not found')
     data[propName] = value
 
     if(index.key[key] === true) data.PID = value
@@ -169,6 +177,11 @@ function findIndexRow(ws, range, name) {
   }
 
   return null
+}
+
+function throwError(str) {
+  process.stderr.write(`\n${chalk.styles.red.open}$`)
+  throw new Error(str)
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
