@@ -2,37 +2,74 @@
 
 const fs = require('fs')
 const process = require('process')
-const readline = require('readline')
+const exec = require('child_process').exec
 const path = require('path')
+
+const readline = require('readline')
 // var Progressbar = require('progress')
-const promise = require('bluebird')
+const P = require('bluebird')
 const chalk = require('chalk')
+
+function fromProcess(childProcess, opts) {
+  opts = opts || {}
+  return new P((resolve, reject) => {
+    let msg = ''
+    let errMsg = ''
+
+    childProcess.stdout.on('data', chunk => {
+      msg += chunk
+    })
+    childProcess.stderr.on('data', error => {
+      errMsg += error
+    })
+
+    childProcess.on('error', error => {
+      errMsg += error
+    })
+
+    childProcess.on('close', exitCode => {
+      const hasError = exitCode !== 0
+
+      const resolutionFunction = hasError ? reject : resolve
+      const resolutionMessage = msg + errMsg
+
+      resolutionFunction(resolutionMessage)
+    })
+  })
+}
 
 const xlsx = require('xlsx')
 
 const SRC = './data/config'
+const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划/config'
 const BIN = './data/config_output'
 
-promise.promisifyAll(fs)
+P.promisifyAll(fs)
 
 // read each file in the config folder
-fs.readdirAsync(SRC, 'utf8')
-  .each(
-    name => {
-      const ext = path.extname(name)
-      // read the excel file
-      if (ext === '.xlsx' || ext === 'xls') {
-        this.currentFile = `${SRC}/${name}`
-        return readFile(`${SRC}/${name}`)
+fromProcess(
+  exec(`svn checkout --non-interactive --no-auth-cache --username shimin --password 123  ${ORG} ${SRC}`)
+).then(msg => {
+  console.log(msg)
+
+  fs.readdirAsync(SRC, 'utf8')
+    .each(
+      name => {
+        const ext = path.extname(name)
+        // read the excel file
+        if (ext === '.xlsx' || ext === 'xls') {
+          this.currentFile = `${SRC}/${name}`
+          return readFile(`${SRC}/${name}`)
+        }
       }
-    }
-  )
-  .error(
-    e => console.log(e)
-  )
-  .then(
-    () => console.log('ALL DONE')
-  )
+    )
+    .error(
+      e => console.log(e)
+    )
+    .then(
+      () => console.log('\nALL DONE...')
+    )
+})
 
 function readFile(path) {
   // parsing xlsx
@@ -177,6 +214,10 @@ function findIndexRow(ws, range, name) {
   }
 
   return null
+}
+
+function stdout(str) {
+  process.stdout.write(`${str}\n`)
 }
 
 function throwError(str) {
