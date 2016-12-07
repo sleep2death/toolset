@@ -2,6 +2,7 @@
 
 const fs = require('fs')
 const process = require('process')
+const spawn = require('child_process').spawn
 const exec = require('child_process').exec
 const path = require('path')
 
@@ -45,25 +46,22 @@ const SRC = './data/config'
 const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
 const BIN = './data/config_output'
 
-const USR = 'shimin'
+const USR = 'aspirin2d'
 const PWD = '123'
-
-const ARGs = `--non-interactive --no-auth-cache --username ${USR} --password ${PWD}`
 
 P.promisifyAll(fs)
 
 // read each file in the config folder
 fromProcess(
   // checkout both svn folders
-  exec('svn', ['--non-interactive', '--no-auth-cache', '--username', 'aspirin2d', '--password', '123', 'checkout', 'https://192.168.6.215/svn/crossgate/trunk/策划/config', 'data/config'])
+  spawn('svn', ['--non-interactive', '--no-auth-cache', '--username', USR, '--password', PWD, 'update', SRC])
 )
   .catch(err => {
     throwError(err)
   })
   .then(msg => {
     console.log(msg)
-
-    fs.readdirAsync(SRC, 'utf8')
+    fs.readdirAsync(SRC)
       .each(
         name => {
           const ext = path.extname(name)
@@ -76,6 +74,21 @@ fromProcess(
       )
       .error(
         e => console.log(e)
+      )
+      .then(
+        () => {
+          fromProcess(
+            // add extra sheets
+            exec(`svn add --force ${BIN} --auto-props --parents --depth infinity`)
+          ).then(() => {
+            fromProcess(
+              // commit
+              exec(`svn commit ${BIN} -m'auto generated commit'`)
+            ).then(() => {
+              console.log('\nall done')
+            })
+          })
+        }
       )
   })
 
