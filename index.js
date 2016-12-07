@@ -19,6 +19,7 @@ function fromProcess(childProcess, opts) {
     childProcess.stdout.on('data', chunk => {
       msg += chunk
     })
+
     childProcess.stderr.on('data', error => {
       errMsg += error
     })
@@ -41,35 +42,42 @@ function fromProcess(childProcess, opts) {
 const xlsx = require('xlsx')
 
 const SRC = './data/config'
-const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划/config'
+const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
 const BIN = './data/config_output'
+
+const USR = 'shimin'
+const PWD = '123'
+
+const ARGs = `--non-interactive --no-auth-cache --username ${USR} --password ${PWD}`
 
 P.promisifyAll(fs)
 
 // read each file in the config folder
 fromProcess(
-  exec(`svn checkout --non-interactive --no-auth-cache --username shimin --password 123  ${ORG} ${SRC}`)
-).then(msg => {
-  console.log(msg)
+  // checkout both svn folders
+  exec('svn', ['--non-interactive', '--no-auth-cache', '--username', 'aspirin2d', '--password', '123', 'checkout', 'https://192.168.6.215/svn/crossgate/trunk/策划/config', 'data/config'])
+)
+  .catch(err => {
+    throwError(err)
+  })
+  .then(msg => {
+    console.log(msg)
 
-  fs.readdirAsync(SRC, 'utf8')
-    .each(
-      name => {
-        const ext = path.extname(name)
-        // read the excel file
-        if (ext === '.xlsx' || ext === 'xls') {
-          this.currentFile = `${SRC}/${name}`
-          return readFile(`${SRC}/${name}`)
+    fs.readdirAsync(SRC, 'utf8')
+      .each(
+        name => {
+          const ext = path.extname(name)
+          // read the excel file
+          if (ext === '.xlsx' || ext === 'xls') {
+            this.currentFile = `${SRC}/${name}`
+            return readFile(`${SRC}/${name}`)
+          }
         }
-      }
-    )
-    .error(
-      e => console.log(e)
-    )
-    .then(
-      () => console.log('\nALL DONE...')
-    )
-})
+      )
+      .error(
+        e => console.log(e)
+      )
+  })
 
 function readFile(path) {
   // parsing xlsx
@@ -214,10 +222,6 @@ function findIndexRow(ws, range, name) {
   }
 
   return null
-}
-
-function stdout(str) {
-  process.stdout.write(`${str}\n`)
 }
 
 function throwError(str) {

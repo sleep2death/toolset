@@ -2,7 +2,7 @@
   "name": "toolset",
   "version": "1.0.1",
   "description": "a toolset for game design and dev import",
-  "main": "index.html",
+  "main": "static/index.html",
   "scripts": {
     "test": "mocha",
     "start": "node index.js"
