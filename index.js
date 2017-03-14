@@ -11,7 +11,7 @@ const readline = require('readline')
 const P = require('bluebird')
 const chalk = require('chalk')
 
-function fromProcess(childProcess, opts) {
+function fromProcess (childProcess, opts) {
   opts = opts || {}
   return new P((resolve, reject) => {
     let msg = ''
@@ -43,7 +43,7 @@ function fromProcess(childProcess, opts) {
 const xlsx = require('xlsx')
 
 const SRC = './data/config'
-const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
+// const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
 const BIN = './data/config_output'
 
 const USR = 'aspirin2d'
@@ -92,10 +92,10 @@ fromProcess(
       )
   })
 
-function readFile(path) {
+function readFile (path) {
   // parsing xlsx
   const wb = xlsx.readFile(path)
-  if(!wb) throwError(`Parsing Error: ${path}`)
+  if (!wb) throwError(`Parsing Error: ${path}`)
 
   wb.SheetNames.forEach(name => {
     // dealing with worksheet
@@ -103,16 +103,16 @@ function readFile(path) {
     ws.path = `${path}/${name}`
     const sheet = readSheet(ws)
 
-    if(sheet) {
+    if (sheet) {
       fs.writeFile(`${BIN}/${name}.json.txt`, JSON.stringify(sheet, null, 4), err => {
-        if(err) throwError(err)
+        if (err) throwError(err)
       })
     }
   })
 }
 
-function readSheet(ws) {
-  if(ws['!ref']) {
+function readSheet (ws) {
+  if (ws['!ref']) {
     const range = xlsx.utils.decode_range(ws['!ref'])
 
     // find the index objects
@@ -121,7 +121,7 @@ function readSheet(ws) {
     const num = findIndexRow(ws, range, '$isNum')
 
     // if all index fields existed, fill the result
-    if(props && key && num) {
+    if (props && key && num) {
       readline.clearLine(process.stderr)
       readline.cursorTo(process.stderr, 0)
       process.stderr.write(`Parsing ${chalk.styles.green.open}${ws.path}${chalk.styles.green.close}`)
@@ -134,28 +134,28 @@ function readSheet(ws) {
   return null
 }
 
-function readData(ws, range, index) {
+function readData (ws, range, index) {
   const res = {}
 
-  for(let R = range.s.r; R <= range.e.r; ++R) {
+  for (let R = range.s.r; R <= range.e.r; ++R) {
     const firstCell = xlsx.utils.encode_cell({c: range.s.c, r: R})
     const firstCellValue = ws[firstCell] ? ws[firstCell].v : null
 
     // jump the index rows
-    if(firstCellValue === '$title' || firstCellValue === '$isKey' || firstCellValue === '$isNum') continue
+    if (firstCellValue === '$title' || firstCellValue === '$isKey' || firstCellValue === '$isNum') continue
 
     // read the row
     const vo = readRow(ws, range, index, R)
-    if(!vo) continue
+    if (!vo) continue
 
-    if(vo.GID >= 0 && vo.PID >= 0) {
-      if(res[vo.GID] === undefined) res[vo.GID] = {}
+    if (vo.GID >= 0 && vo.PID >= 0) {
+      if (res[vo.GID] === undefined) res[vo.GID] = {}
       res[vo.GID][vo.PID] = vo
-    }else if(vo.GID >= 0 && vo.PID === undefined) {
-      if(res[vo.GID] === undefined) res[vo.GID] = []
+    } else if (vo.GID >= 0 && vo.PID === undefined) {
+      if (res[vo.GID] === undefined) res[vo.GID] = []
       res[vo.GID].push(vo)
-    }else if(vo.GID === undefined && vo.PID >= 0) {
-      if(res[vo.PID]) {
+    } else if (vo.GID === undefined && vo.PID >= 0) {
+      if (res[vo.PID]) {
         throwError(`PID duplicated ${vo.PID}`)
       }
       res[vo.PID] = vo
@@ -165,67 +165,64 @@ function readData(ws, range, index) {
   return res
 }
 
-function readRow(ws, range, index, r) {
+function readRow (ws, range, index, r) {
   const cell = xlsx.utils.encode_cell({c: range.s.c, r})
   const data = {}
   // if commented ,then return null
-  if(ws[cell] && ws[cell].v === '#') return null
-  for(const key in index.props) {
+  if (ws[cell] && ws[cell].v === '#') return null
+  for (const key in index.props) {
     const cell = xlsx.utils.encode_cell({c: key, r})
     let value = ws[cell] ? ws[cell].v : undefined
     // handle empty value
-    if(value === undefined || String(value).trim().length === 0) {
+    if (value === undefined || String(value).trim().length === 0) {
       // if id is empty, ignore it
-      if(index.key[key] === true || index.key[key] === 'GROUP') {
+      if (index.key[key] === true || index.key[key] === 'GROUP') {
         // console.log('empty id field')
         return null
       }
 
       // the default value of number field is 0, string field is ''
       value = index.num[key] === true ? 0 : ''
-    }else{
+    } else {
       // return when hit comment tag
-      if(value === '#') {
-        if(isEmpty(data)) return null
+      if (value === '#') {
+        if (isEmpty(data)) return null
         return data
       }
 
-      if(index.num[key]) {
+      if (index.num[key]) {
         // if the value is boolean string, and type is number
-        if(String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'false')
-          value = value === 'true'
-        else
-          value = Number(value)
-      }else{
+        if (String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'false') { value = value === 'true' } else { value = Number(value) }
+      } else {
         value = String(value)
       }
     }
 
     const propName = index.props[key]
 
-    if(propName === undefined) throwError('proper name not found')
+    if (propName === undefined) throwError('proper name not found')
     data[propName] = value
 
-    if(index.key[key] === true) data.PID = value
-    if(index.key[key] === 'GROUP') data.GID = value
+    if (index.key[key] === true) data.PID = value
+    if (index.key[key] === 'GROUP') data.GID = value
   }
 
   return data
 }
 
 // get the index object by the certain name: $title, $isKey, $isNum
-function findIndexRow(ws, range, name) {
-  for(let R = range.s.r; R <= range.e.r; ++R) {
+function findIndexRow (ws, range, name) {
+  for (let R = range.s.r; R <= range.e.r; ++R) {
     const firstCell = xlsx.utils.encode_cell({c: range.s.c, r: R})
-    if(ws[firstCell] && ws[firstCell].v === name) {
+    if (ws[firstCell] && ws[firstCell].v === name) {
       const props = {}
       let commentOn = false
 
-      for(let C = range.s.c + 1; C <= range.e.c; ++C) {
+      for (let C = range.s.c + 1; C <= range.e.c; ++C) {
         const cell = xlsx.utils.encode_cell({c: C, r: R})
 
-        if(ws[cell] && ws[cell].v === '#') commentOn = true
-        if(ws[cell] && commentOn === false) {
+        if (ws[cell] && ws[cell].v === '#') commentOn = true
+        if (ws[cell] && commentOn === false) {
           props[C] = ws[cell].v
         }
       }
@@ -237,13 +234,13 @@ function findIndexRow(ws, range, name) {
   return null
 }
 
-function throwError(str) {
+function throwError (str) {
   process.stderr.write(`\n${chalk.styles.red.open}$`)
   throw new Error(str)
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
-function isEmpty(obj) {
+function isEmpty (obj) {
   if (obj === null) {
     return true
   }
