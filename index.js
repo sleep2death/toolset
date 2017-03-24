@@ -46,51 +46,28 @@ const SRC = './data/config'
 // const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
 const BIN = './data/config_output'
 
-const USR = 'aspirin2d'
-const PWD = '123'
-
 P.promisifyAll(fs)
 
 // read each file in the config folder
-fromProcess(
-  // checkout both svn folders
-  spawn('svn', ['--non-interactive', '--no-auth-cache', '--username', USR, '--password', PWD, 'update', SRC])
-)
-  .catch(err => {
-    throwError(err)
-  })
-  .then(msg => {
-    console.log(msg)
-    fs.readdirAsync(SRC)
-      .each(
-        name => {
-          const ext = path.extname(name)
-          // read the excel file
-          if (ext === '.xlsx' || ext === 'xls') {
-            this.currentFile = `${SRC}/${name}`
-            return readFile(`${SRC}/${name}`)
-          }
-        }
-      )
-      .error(
-        e => console.log(e)
-      )
-      .then(
-        () => {
-          fromProcess(
-            // add extra sheets
-            exec(`svn add --force ${BIN} --auto-props --parents --depth infinity`)
-          ).then(() => {
-            fromProcess(
-              // commit
-              exec(`svn commit ${BIN} -m'auto generated commit'`)
-            ).then(() => {
-              console.log('\nall done')
-            })
-          })
-        }
-      )
-  })
+fs.readdirAsync(SRC)
+  .each(
+    name => {
+      const ext = path.extname(name)
+      // read the excel file
+      if (ext === '.xlsx' || ext === 'xls') {
+        this.currentFile = `${SRC}/${name}`
+        return readFile(`${SRC}/${name}`)
+      }
+    }
+  )
+  .error(
+    e => console.log(e)
+  )
+  .then(
+    () => {
+      console.log('\nall done')
+    }
+  )
 
 function readFile (path) {
   // parsing xlsx
