@@ -43,7 +43,6 @@ function fromProcess(childProcess, opts) {
 const xlsx = require('xlsx')
 
 const SRC = './data/config'
-const ORG = 'https://192.168.6.215/svn/crossgate/trunk/策划'
 const BIN = './data/config_output'
 
 const USR = 'aspirin2d'
