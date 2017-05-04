@@ -11,7 +11,7 @@ const readline = require('readline')
 const P = require('bluebird')
 const chalk = require('chalk')
 
-function fromProcess (childProcess, opts) {
+function fromProcess(childProcess, opts) {
   opts = opts || {}
   return new P((resolve, reject) => {
     let msg = ''
@@ -92,7 +92,7 @@ fromProcess(
       )
   })
 
-function readFile (path) {
+function readFile(path) {
   // parsing xlsx
   const wb = xlsx.readFile(path)
   if (!wb) throwError(`Parsing Error: ${path}`)
@@ -100,8 +100,13 @@ function readFile (path) {
   wb.SheetNames.forEach(name => {
     // dealing with worksheet
     const ws = wb.Sheets[name]
+
     ws.path = `${path}/${name}`
     const sheet = readSheet(ws)
+    // if the worksheet is TaskCfg, then do the post generate
+    if(name === 'TaskCfg') {
+      postCheck(sheet)
+    }
 
     if (sheet) {
       fs.writeFile(`${BIN}/${name}.json.txt`, JSON.stringify(sheet, null, 4), err => {
@@ -111,7 +116,7 @@ function readFile (path) {
   })
 }
 
-function readSheet (ws) {
+function readSheet(ws) {
   if (ws['!ref']) {
     const range = xlsx.utils.decode_range(ws['!ref'])
 
@@ -134,7 +139,7 @@ function readSheet (ws) {
   return null
 }
 
-function readData (ws, range, index) {
+function readData(ws, range, index) {
   const res = {}
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -165,7 +170,7 @@ function readData (ws, range, index) {
   return res
 }
 
-function readRow (ws, range, index, r) {
+function readRow(ws, range, index, r) {
   const cell = xlsx.utils.encode_cell({c: range.s.c, r})
   const data = {}
   // if commented ,then return null
@@ -211,7 +216,7 @@ function readRow (ws, range, index, r) {
 }
 
 // get the index object by the certain name: $title, $isKey, $isNum
-function findIndexRow (ws, range, name) {
+function findIndexRow(ws, range, name) {
   for (let R = range.s.r; R <= range.e.r; ++R) {
     const firstCell = xlsx.utils.encode_cell({c: range.s.c, r: R})
     if (ws[firstCell] && ws[firstCell].v === name) {
@@ -234,13 +239,35 @@ function findIndexRow (ws, range, name) {
   return null
 }
 
-function throwError (str) {
+function postCheck(sheet) {
+  for(const index in sheet) {
+    const item = sheet[index]
+    if(item.serialNumber > 0) {
+      item.nextTask = findNextTask(sheet, item.serialNumber)
+    }
+  }
+}
+
+function findNextTask(sheet, index) {
+  const res = []
+  const nextIndex = index + 1
+  for(const index in sheet) {
+    const item = sheet[index]
+    if(item.serialNumber === nextIndex) {
+      res.push(item.id)
+    }
+  }
+
+  return res
+}
+
+function throwError(str) {
   process.stderr.write(`\n${chalk.styles.red.open}$`)
   throw new Error(str)
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
-function isEmpty (obj) {
+function isEmpty(obj) {
   if (obj === null) {
     return true
   }
