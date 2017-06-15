@@ -54,7 +54,7 @@ P.promisifyAll(fs)
 // read each file in the config folder
 fromProcess(
   // checkout both svn folders
-  spawn('svn', ['--non-interactive', '--no-auth-cache', '--username', USR, '--password', PWD, 'update', SRC])
+  spawn('svn', ['--non-interactive', '--no-auth-cache','update', SRC])
 )
   .catch(err => {
     throwError(err)
